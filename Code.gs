@@ -90,7 +90,7 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
 
   }
 
-  return results.join('\n'); // Join all results into a single string and return
+  return results; // Return ARRAY
 }
 
 
@@ -115,17 +115,16 @@ function first_main() {
 function main() {
   const hoyoResp = Object.getOwnPropertyNames(profiles)
     .map(name => {
-      const result = sendGetRequestsWithCdkeys(profiles[name], name);
-      if (result) {
-        return name + ':\n' + result;
+      const results = sendGetRequestsWithCdkeys(profiles[name], name);
+      if (results) {
+        return results.map(result => `${name}: ${result}`).flat();
       }
-      return '';
+      return [];
     })
-    .filter(result => result !== '')
-    .join('\n');
+    .flat();
 
   if (discord_notify && discordWebhook && hoyoResp) {
-    postWebhook(hoyoResp);
+    sendDiscord(hoyoResp);
   }
 }
 
@@ -133,11 +132,26 @@ function discordPing() {
   return myDiscordID && error ? `<@${myDiscordID}>, You got errors while processing redemption codes` : 'Redemption codes redeemed successfully';
 }
 
+function sendDiscord(data) {
+  let currentChunk = `${discordPing()}\n`;
+  
+  for (let i = 0; i < data.length; i++) {
+    if (currentChunk.length + data[i].length >= 1899) {
+      sendWebhook(currentChunk);
+      currentChunk = '';
+    }
+    currentChunk += `${data[i]}\n`;
+  }
+  if (currentChunk) {
+    postWebhook(currentChunk);
+  }
+}
+
 function postWebhook(data) {
   let payload = JSON.stringify({
     'username': 'auto-redeem',
     'avatar_url': 'https://i.imgur.com/LI1D4hP.png',
-    'content': `${discordPing()}\n${data}`
+    'content': data
   });
 
   const options = {
@@ -148,8 +162,5 @@ function postWebhook(data) {
   };
 
   const response = UrlFetchApp.fetch(discordWebhook, options);
-  Logger.log(`Posted to webhook, returned ${response}`)
+  Logger.log(`Posted to webhook, returned ${response}`);
 }
-
-
-
