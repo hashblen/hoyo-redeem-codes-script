@@ -43,7 +43,7 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
     const cdkeys = cdkeysbygame[game];
     cdkeys.forEach(function(cdkeydict) {
       const added_at = cdkeydict.added_at;
-      if(!first_run && added_at < Date.now()/1000 - 60*60*24*1.5) {
+      if(!first_run && added_at < (scriptProperties.getProperty('last_execution') ?? (Date.now()/1000 - 60*60*24*1.5))) {
         // If code was added more than 1.5 days ago, don't try it.
         return
       }
@@ -126,6 +126,8 @@ function main() {
   if (discord_notify && discordWebhook && hoyoResp) {
     sendDiscord(hoyoResp);
   }
+
+  scriptProperties.setProperty('last_execution', Date.now().toString());
 }
 
 function discordPing() {
@@ -137,7 +139,7 @@ function sendDiscord(data) {
   
   for (let i = 0; i < data.length; i++) {
     if (currentChunk.length + data[i].length >= 1899) {
-      sendWebhook(currentChunk);
+      postWebhook(currentChunk);
       currentChunk = '';
     }
     currentChunk += `${data[i]}\n`;
