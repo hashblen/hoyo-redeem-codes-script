@@ -123,7 +123,7 @@ function main() {
     })
     .flat();
 
-  if (discord_notify && discordWebhook && hoyoResp) {
+  if (discord_notify && discordWebhook && hoyoResp.length > 0) {
     sendDiscord(hoyoResp);
   }
 
