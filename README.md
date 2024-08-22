@@ -4,7 +4,7 @@ Don't want to miss out on free stuff but too lazy to do it by hand? This is what
 
 ## Google Apps Script
 
-1. Create a [Google Apps Script](https://script.google.com) and copy the code from [Code.gs](Code.gs) into it. Then for each game do steps 2 to 6 to setup your account info.
+1. Create a [Google Apps Script](https://script.google.com) and copy the code from [Code.gs](Code.gs) into it. Then for each account and game do steps 2 to 7 to setup your account info.
 
 2. Open a redeem code page in your browser.
 3. Login to your account.
@@ -14,7 +14,7 @@ Don't want to miss out on free stuff but too lazy to do it by hand? This is what
 ![1](Readme-src/1.png)
 7. Then, scroll down into the Request Headers section and copy the part of the cookie that includes `cookie_token_v2`, `account_mid_v2` and `account_id_v2`.
 ![2](Readme-src/2.png)
-8. In the Google apps script, on the left sidebar go into "Project Settings", and in the bottom add/edit a property named `COOKIE` and paste what you just copied in and click save.
+8. In the Google apps script, on the left sidebar go into "Project Settings", and in the bottom add/edit a property named `COOKIE` and paste what you just copied in and click save. If you have multiple accounts, you can save different cookies by providing a property per account you are using. For example if you named your profiles "main" and "2nd", you can provide the properties "COOKIE_main" and "COOKIE_2nd" to have the script use these for the configured profile.
 9. Set `DISCORD_ID` and `WEBHOOK_URL` properties also, so that it notifies you when it uses a new code or when you need to copy a new cookie. If you don't want to be pinged, leave `DISCORD_ID` blank.
 ![3](Readme-src/3.png)
 
@@ -32,4 +32,4 @@ If you have problems, I am available for help in on discord `@Kynatosh` on the S
 
 ## Acknowledgements
 * https://github.com/canaria3406/hoyolab-auto-sign for inspiration
-* @minigamer32 on the [StarDB Discord Server](https://discord.gg/chives) for the idea
+* @Minigamer42 on the [StarDB Discord Server](https://discord.gg/chives) for the idea

@@ -1,11 +1,13 @@
 const scriptProperties = PropertiesService.getScriptProperties();
 
 /** REPLACE PARAMETERS WITH THE ONES YOU GOT **/
-const urlDict = {
-  'genshin': 'https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=hk4e_global&uid=715052227&region=os_euro',
-  'hsr': 'https://sg-hkrpg-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=hkrpg_global&uid=701683615&region=prod_official_eur',
-  'zzz': 'https://public-operation-nap.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=nap_global&uid=1500028068&region=prod_gf_eu'
-}
+const profiles = {
+  main: {
+    'genshin': 'https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=hk4e_global&uid=715052227&region=os_euro',
+    'hsr': 'https://sg-hkrpg-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=hkrpg_global&uid=701683615&region=prod_official_eur',
+    'zzz': 'https://public-operation-nap.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=nap_global&uid=1500028068&region=prod_gf_eu'
+  }
+};
 
 const discord_notify = true
 /** REMEMBER TO SET THOSE AND COOKIE IN PROJECT SETTINGS > SCRIPT PROPERTIES **/
@@ -14,6 +16,8 @@ const discordWebhook = scriptProperties.getProperty('WEBHOOK_URL')
 
 const verbose = false
 let first_run = false
+let error = false
+const cdkeysbygame = fetchJson(); // {'genshin': [], 'hsr': [{'code': '4TKSX77Y58QK'}, {'code': 'HAOCHIXIANZHOU'}], 'zzz': []};
 
 function fetchJson() {
   const jsonUrl = 'https://db.hashblen.com/codes'; // Replace with your JSON endpoint URL
@@ -28,9 +32,7 @@ const EXPIRED = -2001
 const INVALID = -2003
 const SUCCESSFUL = 0
 
-function sendGetRequestsWithCdkeys() {
-  const cdkeysbygame = fetchJson(); // {'genshin': [], 'hsr': [{'code': '4TKSX77Y58QK'}, {'code': 'HAOCHIXIANZHOU'}], 'zzz': []};
-
+function sendGetRequestsWithCdkeys(urlDict, profile) {
   let results = [];
 
   for (const game in urlDict) {
@@ -45,7 +47,7 @@ function sendGetRequestsWithCdkeys() {
         // If code was added more than 1.5 days ago, don't try it.
         return
       }
-      const cookies = scriptProperties.getProperty(`COOKIE`); // Replace with your actual cookie token in the script properties!!!
+      const cookies = scriptProperties.getProperty('COOKIE_' + profile) ?? scriptProperties.getProperty(`COOKIE`); // Replace with your actual cookie token in the script properties!!!
       const cdkey = cdkeydict.code;
       const url = replaceCdkeyInUrl(fullUrl, cdkey);
 
@@ -67,6 +69,9 @@ function sendGetRequestsWithCdkeys() {
         const response = UrlFetchApp.fetch(url, options);
         const jsonData = JSON.parse(response.getContentText());
         const retcode = jsonData.retcode;
+        if(![ALREADY_IN_USE, ALREADY_IN_USE_2, SUCCESSFUL].includes(retcode)) {
+          error = true;
+        }
         let resultText = `${game}: ${cdkey}: ${jsonData.message}`;
         if(verbose) {
           resultText += ` ${response}`;
@@ -78,7 +83,8 @@ function sendGetRequestsWithCdkeys() {
       } catch (e) {
         Logger.log(`${game}: Failed to send request for ${cdkey}: ${e.message}`);
         results.push(`$${game}: {cdkey}: Failed to send request`); // Store the error in the array
-      };
+        error = true;
+      }
       Utilities.sleep(5500);
     });
 
@@ -107,7 +113,16 @@ function first_main() {
 }
 
 function main() {
-  let hoyoResp = sendGetRequestsWithCdkeys();
+  const hoyoResp = Object.getOwnPropertyNames(profiles)
+    .map(name => {
+      const result = sendGetRequestsWithCdkeys(profiles[name], name);
+      if (result) {
+        return name + ':\n' + result;
+      }
+      return '';
+    })
+    .filter(result => result !== '')
+    .join('\n');
 
   if (discord_notify && discordWebhook && hoyoResp) {
     postWebhook(hoyoResp);
@@ -115,14 +130,14 @@ function main() {
 }
 
 function discordPing() {
-  return myDiscordID ? `<@${myDiscordID}>, ` : '';
+  return myDiscordID && error ? `<@${myDiscordID}>, You got errors while processing redemption codes` : 'Redemption codes redeemed successfully';
 }
 
 function postWebhook(data) {
   let payload = JSON.stringify({
     'username': 'auto-redeem',
     'avatar_url': 'https://i.imgur.com/LI1D4hP.png',
-    'content': `${discordPing()}You have redeemed new codes or got errors.\n${data}`
+    'content': `${discordPing()}\n${data}`
   });
 
   const options = {
