@@ -42,8 +42,8 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
     }
     const cdkeys = cdkeysbygame[game];
     cdkeys.forEach(function(cdkeydict) {
-      const added_at = cdkeydict.added_at;
-      if(!first_run && added_at < (scriptProperties.getProperty('last_execution') ?? (Date.now()/1000 - 60*60*24*1.5))) {
+      cdkeys.added_at *= 1000;
+      if(!first_run && cdkeydict.added_at < (scriptProperties.getProperty('last_execution') ?? (Date.now() - 1000 * 60*60*24*1.5))) {
         // If code was added more than 1.5 days ago, don't try it.
         return
       }
