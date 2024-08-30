@@ -18,6 +18,10 @@ const verbose = false
 let first_run = false
 let error = false
 const cdkeysbygame = fetchJson(); // {'genshin': [], 'hsr': [{'code': '4TKSX77Y58QK'}, {'code': 'HAOCHIXIANZHOU'}], 'zzz': []};
+const last_execution = scriptProperties.getProperty('last_execution');
+if (last_execution <= 0) {
+  first_run = true;
+}
 
 function fetchJson() {
   const jsonUrl = 'https://db.hashblen.com/codes'; // Replace with your JSON endpoint URL
@@ -42,9 +46,8 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
     }
     const cdkeys = cdkeysbygame[game];
     cdkeys.forEach(function(cdkeydict) {
-      cdkeydict.added_at *= 1000;
-      if(!first_run && cdkeydict.added_at < (scriptProperties.getProperty('last_execution') ?? (Date.now() - 1000 * 60*60*24*1.5))) {
-        // If code was added more than 1.5 days ago, don't try it.
+      if(!first_run && cdkeydict.added_at * 1000 < last_execution) {
+        // If code was added before last run of this script, dont try to redeem it again.
         return
       }
       const cookies = scriptProperties.getProperty('COOKIE_' + profile) ?? scriptProperties.getProperty(`COOKIE`); // Replace with your actual cookie token in the script properties!!!
