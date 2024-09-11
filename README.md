@@ -10,8 +10,8 @@ Don't want to miss out on free stuff but too lazy to do it by hand? This is what
 3. Login to your account.
 4. Open the developer menu by hitting F12 and go to the network tab.
 5. Enter anything in the code and click the button. A request should appear.
-6. Click on the GET webExchangeCdkey request., and copy over to the right game URL in the script the `region`, `game_biz` and `uid` parameters. -- or directly copy the URL and you'll replace that, at your own risk if there are more parameters (it needs lang to work too).
-![1](Readme-src/1.png)
+6. Click on the GET webExchangeCdkey request. FOR EVERYTHING EXCEPT HSR: and copy over to the right game URL in the script the `region`, `game_biz` and `uid` parameters. -- or directly copy the URL and you'll replace that, at your own risk if there are more parameters (it needs lang to work too).
+![1](Readme-src/1.png). FOR HSR: Go in the `Request` Subtab, and copy the values of `game_biz`, `uid` and `region` over to the script.
 7. Then, scroll down into the Request Headers section and copy the part of the cookie that includes `cookie_token_v2`, `account_mid_v2` and `account_id_v2`.
 ![2](Readme-src/2.png)
 8. In the Google apps script, on the left sidebar go into "Project Settings", and in the bottom add/edit a property named `COOKIE` and paste what you just copied in and click save. If you have multiple accounts, you can save different cookies by providing a property per account you are using. For example if you named your profiles "main" and "2nd", you can provide the properties "COOKIE_main" and "COOKIE_2nd" to have the script use these for the configured profile.

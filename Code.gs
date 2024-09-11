@@ -3,9 +3,16 @@ const scriptProperties = PropertiesService.getScriptProperties();
 /** REPLACE PARAMETERS WITH THE ONES YOU GOT **/
 const profiles = {
   main: {
-    'genshin': 'https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=hk4e_global&uid=715052227&region=os_euro',
-    'hsr': 'https://sg-hkrpg-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=hkrpg_global&uid=701683615&region=prod_official_eur',
-    'zzz': 'https://public-operation-nap.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=nap_global&uid=1500028068&region=prod_gf_eu'
+    'genshin': {
+      'url': 'https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=hk4e_global&uid=715052227&region=os_euro'
+      },
+    'hsr': {
+      'url': 'https://sg-hkrpg-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkeyRisk',
+      'request' : {"game_biz":"hkrpg_global", "uid":"701683615", "region":"prod_official_eur"}
+      },
+    'zzz': {
+      'url': 'https://public-operation-nap.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?lang=en&game_biz=nap_global&uid=1500028068&region=prod_gf_eu'
+      }
   }
 };
 
@@ -17,7 +24,7 @@ const discordWebhook = scriptProperties.getProperty('WEBHOOK_URL')
 const verbose = false
 let first_run = false
 let error = false
-const cdkeysbygame = fetchJson(); // {'genshin': [], 'hsr': [{'code': '4TKSX77Y58QK'}, {'code': 'HAOCHIXIANZHOU'}], 'zzz': []};
+const cdkeysbygame = fetchJson();
 const last_execution = scriptProperties.getProperty('last_execution');
 if (last_execution <= 0) {
   first_run = true;
@@ -40,7 +47,7 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
   let results = [];
 
   for (const game in urlDict) {
-    const fullUrl = urlDict[game];
+    const fullUrl = urlDict[game].url;
     if(!fullUrl) {
       continue
     }
@@ -52,10 +59,11 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
       }
       const cookies = scriptProperties.getProperty('COOKIE_' + profile) ?? scriptProperties.getProperty(`COOKIE`); // Replace with your actual cookie token in the script properties!!!
       const cdkey = cdkeydict.code;
-      const url = replaceCdkeyInUrl(fullUrl, cdkey);
 
-      const options = {
-        'method': 'get',
+      const isRisk = 'request' in urlDict[game];
+      const url = isRisk? fullUrl : replaceCdkeyInUrl(fullUrl, cdkey);
+      let options = {
+        'method': isRisk? 'post' : 'get',
         'headers': {
           'Cookie': `${cookies}`,
           'Accept': 'application/json, text/plain, */*',
@@ -67,6 +75,12 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
         },
         'muteHttpExceptions': true
       };
+      if(isRisk) {
+        let body = {...urlDict[game].request};
+        body.cdkey = cdkey;
+        body.lang = 'en';
+        options.payload = JSON.stringify(body);
+      }
 
       try {
         const response = UrlFetchApp.fetch(url, options);
@@ -116,6 +130,7 @@ function first_main() {
 }
 
 function main() {
+  let startExec = Date.now().toString();
   const hoyoResp = Object.getOwnPropertyNames(profiles)
     .map(name => {
       const results = sendGetRequestsWithCdkeys(profiles[name], name);
@@ -130,7 +145,7 @@ function main() {
     sendDiscord(hoyoResp);
   }
 
-  scriptProperties.setProperty('last_execution', Date.now().toString());
+  scriptProperties.setProperty('last_execution', startExec);
 }
 
 function discordPing() {
