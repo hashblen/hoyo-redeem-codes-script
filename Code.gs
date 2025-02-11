@@ -21,6 +21,8 @@ const discord_notify = true
 const myDiscordID = scriptProperties.getProperty('DISCORD_ID')
 const discordWebhook = scriptProperties.getProperty('WEBHOOK_URL')
 
+let keepCookieAlive = true
+
 const verbose = false
 let first_run = false
 let error = false
@@ -53,7 +55,7 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
     }
     const cdkeys = cdkeysbygame[game];
     cdkeys.forEach(function(cdkeydict) {
-      if(!first_run && cdkeydict.added_at * 1000 < last_execution) {
+      if(!first_run && cdkeydict.added_at * 1000 < last_execution && !keepCookieAlive) {
         // If code was added before last run of this script, dont try to redeem it again.
         return
       }
@@ -84,6 +86,7 @@ function sendGetRequestsWithCdkeys(urlDict, profile) {
 
       try {
         const response = UrlFetchApp.fetch(url, options);
+        keepCookieAlive = false;
         const jsonData = JSON.parse(response.getContentText());
         const retcode = jsonData.retcode;
         if(![ALREADY_IN_USE, ALREADY_IN_USE_2, SUCCESSFUL].includes(retcode)) {
